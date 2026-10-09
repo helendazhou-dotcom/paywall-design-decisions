@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{REPORT_TITLE}}</title>
+  <style>
+    :root{--bg:#f4f2ec;--paper:#fffefb;--ink:#1e211f;--muted:#6f746f;--line:#dedbd2;--accent:#ff7a24;--accent-soft:#fff0e4;--shadow:0 18px 55px rgba(31,35,32,.09)}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB",sans-serif}
+    a{color:#a84708;text-underline-offset:3px}button{font:inherit}.shell{max-width:1440px;margin:auto;padding:28px}.topbar{position:sticky;top:12px;z-index:10;display:flex;gap:10px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:16px;background:rgba(255,254,251,.94);backdrop-filter:blur(16px);box-shadow:var(--shadow)}
+    .brand{font-weight:760;margin-right:auto}.meta{color:var(--muted);font-size:12px}.action{border:1px solid var(--line);background:white;border-radius:999px;padding:8px 13px;cursor:pointer}.action.primary{background:var(--ink);color:white;border-color:var(--ink)}
+    .layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:22px;margin-top:22px}.report{background:var(--paper);border:1px solid var(--line);border-radius:24px;padding:clamp(22px,4vw,58px);box-shadow:var(--shadow)}
+    h1{font-size:clamp(34px,5vw,64px);line-height:1.02;letter-spacing:-.045em;margin:0 0 14px}h2{font-size:28px;line-height:1.2;margin:0 0 16px}h3{font-size:20px}.lede{font-size:18px;color:var(--muted);max-width:76ch}.report-section{position:relative;border-top:1px solid var(--line);padding:34px 0 16px}.report-section:first-child{border-top:0;padding-top:8px}
+    .comment-trigger{position:absolute;right:0;top:28px;border:1px solid var(--line);background:white;border-radius:999px;padding:7px 11px;cursor:pointer;color:var(--muted)}.comment-trigger.has-comment{background:var(--accent-soft);border-color:#ffb37f;color:#8e3d08}
+    .card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}.card,.data-card{border:1px solid var(--line);border-radius:16px;padding:18px;background:#fff}.reference{display:grid;grid-template-columns:minmax(240px,.8fr) minmax(300px,1.2fr);gap:20px;align-items:start}.reference img{max-width:100%;height:auto;border-radius:18px;border:1px solid var(--line);background:#eee}
+    table{width:100%;border-collapse:collapse;display:block;overflow:auto}th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+    .label{display:inline-block;border-radius:999px;padding:3px 8px;margin:2px 4px 2px 0;font-size:12px;background:#eceeea}.label.data{background:#e5f5ef;color:#0e684f}.label.observed{background:#e9efff;color:#304e9b}.label.inference{background:#fff0df;color:#8c4c09}.label.unknown{background:#f2eaf6;color:#6c3c7c}
+    .sidebar{position:sticky;top:86px;align-self:start;max-height:calc(100vh - 108px);overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:var(--shadow)}.sidebar h2{font-size:18px}.comment-item{border-top:1px solid var(--line);padding:14px 0}.comment-item:first-of-type{border-top:0}.comment-item small{color:var(--muted)}.comment-item p{white-space:pre-wrap;margin:7px 0}.empty{color:var(--muted)}
+    dialog{width:min(560px,calc(100% - 28px));border:1px solid var(--line);border-radius:20px;padding:0;box-shadow:var(--shadow)}dialog::backdrop{background:rgba(22,24,22,.45)}.dialog-body{padding:22px}.dialog-body textarea{width:100%;min-height:150px;resize:vertical;padding:12px;border:1px solid var(--line);border-radius:12px}.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+    @media(max-width:960px){.layout{grid-template-columns:1fr}.sidebar{position:relative;top:auto;max-height:none}.reference{grid-template-columns:1fr}.meta{display:none}}@media print{body{background:white}.shell{padding:0}.topbar,.sidebar,.comment-trigger{display:none}.layout{display:block}.report{border:0;box-shadow:none;padding:0}}
+  </style>
+</head>
+<body data-report-id="{{REPORT_ID}}">
+  <div class="shell">
+    <header class="topbar"><div class="brand">订阅页研究报告</div><div class="meta">生成于 {{GENERATED_AT}}</div><button class="action" id="copyComments">复制评论</button><button class="action" id="exportComments">导出 JSON</button><button class="action primary" id="downloadReviewed">下载带评论 HTML</button></header>
+    <div class="layout"><main class="report">{{REPORT_BODY}}</main><aside class="sidebar" aria-live="polite"><h2>评论</h2><p class="empty" id="emptyComments">点击报告章节右上角的“评论”添加反馈。</p><div id="commentList"></div></aside></div>
+  </div>
+  <dialog id="commentDialog"><form method="dialog" class="dialog-body"><h2 id="dialogTitle">添加评论</h2><textarea id="commentText" aria-label="评论内容" placeholder="写下要修改、补充或讨论的内容…"></textarea><div class="dialog-actions"><button class="action" value="cancel">取消</button><button class="action primary" id="saveComment" value="default">保存</button></div></form></dialog>
+  <script type="application/json" id="embeddedComments">{{EMBEDDED_COMMENTS}}</script>
+  <script>
+  (()=>{
+    const reportId=document.body.dataset.reportId||location.pathname,storageKey=`paywall-report-comments:${reportId}`,sections=[...document.querySelectorAll('[data-comment-id]')],dialog=document.getElementById('commentDialog'),field=document.getElementById('commentText');let activeId=null,embedded=[];try{embedded=JSON.parse(document.getElementById('embeddedComments').textContent||'[]')}catch(e){}let comments={};try{comments=JSON.parse(localStorage.getItem(storageKey)||'{}')}catch(e){}if(!Object.keys(comments).length)embedded.forEach(x=>{if(x.id)comments[x.id]=x});
+    const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),titleFor=id=>{const s=sections.find(x=>x.dataset.commentId===id);return s?.querySelector('h1,h2,h3')?.textContent?.trim()||id},rows=()=>Object.values(comments).filter(x=>x.text);
+    function persist(){localStorage.setItem(storageKey,JSON.stringify(comments));render()}
+    function openEditor(id){activeId=id;document.getElementById('dialogTitle').textContent=`评论：${titleFor(id)}`;field.value=comments[id]?.text||'';dialog.showModal();setTimeout(()=>field.focus(),30)}
+    function render(){sections.forEach(s=>{let b=s.querySelector(':scope > .comment-trigger');if(!b){b=document.createElement('button');b.className='comment-trigger';b.type='button';b.onclick=()=>openEditor(s.dataset.commentId);s.prepend(b)}b.classList.toggle('has-comment',!!comments[s.dataset.commentId]?.text);b.textContent=comments[s.dataset.commentId]?.text?'已评论':'评论'});const list=document.getElementById('commentList');list.innerHTML='';const all=rows();document.getElementById('emptyComments').hidden=all.length>0;all.forEach(c=>{const el=document.createElement('div');el.className='comment-item';el.innerHTML=`<small>${esc(c.title||c.id)}</small><p>${esc(c.text)}</p><button class="action" type="button">编辑</button>`;el.querySelector('button').onclick=()=>openEditor(c.id);list.appendChild(el)})}
+    document.getElementById('saveComment').onclick=e=>{e.preventDefault();const text=field.value.trim();if(text)comments[activeId]={id:activeId,title:titleFor(activeId),text,updated_at:new Date().toISOString()};else delete comments[activeId];persist();dialog.close()};
+    const download=(name,type,data)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)};
+    document.getElementById('exportComments').onclick=()=>download(`${reportId}-comments.json`,'application/json',JSON.stringify({report_id:reportId,comments:rows()},null,2));
+    document.getElementById('copyComments').onclick=async()=>{const text=rows().map((c,i)=>`${i+1}. ${c.title} [${c.id}]\n${c.text}`).join('\n\n')||'暂无评论';await navigator.clipboard.writeText(text)};
+    document.getElementById('downloadReviewed').onclick=()=>{const clone=document.documentElement.cloneNode(true);clone.querySelector('#embeddedComments').textContent=JSON.stringify(rows()).replace(/<\//g,'<\\/');download(`${reportId}-reviewed.html`,'text/html','<!doctype html>\n'+clone.outerHTML)};render();
+  })();
+  </script>
+</body>
+</html>
