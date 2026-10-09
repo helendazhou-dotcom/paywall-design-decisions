@@ -1,0 +1,4 @@
+interface:
+  display_name: "订阅页设计决策"
+  short_description: "用证据与第一性原理形成可落地的订阅页设计决策"
+  default_prompt: "Use $paywall-design-decisions to silently classify this as new research or an incremental update, select Quick, Standard, or Full depth, and perform only the necessary evidence-aware paywall design work. Do not announce the mode unless I ask or a material scope escalation requires notice. Preserve verified evidence and unchanged conclusions; do not rerun full research for a local edit."
